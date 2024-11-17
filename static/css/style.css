@@ -1,0 +1,28 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+h1 {
+    text-align: center;
+}
+
+#tree-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.tree-node {
+    padding: 5px 10px;
+    border: 1px solid #333;
+    margin: 5px;
+    border-radius: 4px;
+    text-align: center;
+    background-color: #f0f0f0;
+}
+
+.tree-children {
+    margin-left: 20px;
+    border-left: 1px dashed #ccc;
+    padding-left: 10px;
+}

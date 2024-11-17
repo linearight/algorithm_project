@@ -1,0 +1,101 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RST Tree Visualization</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <h1>RST Tree Structure</h1>
+    <div id="tree-container"></div>
+    
+    <script>
+        // Pass rs3 data from Flask to JavaScript
+        const rs3Data = {{ rs3_data | tojson }};
+        
+        function buildTree(data) {
+            const container = document.getElementById('tree-container');
+
+            // Step 1: Create a map of segments and groups by their ID
+            const Map = {};
+            const combined = data.segments.concat(data.groups);
+            combined.forEach(item => {
+                Map[item.id] = {
+                    element: createNode(item),
+                    children: []
+                };
+            });
+
+            // Step 2: Build parent-child relationships
+            combined.forEach(item => {
+                if (item.parent) {
+                    if (Map[item.parent]) {
+                        Map[item.parent].children.push(Map[item.id]);
+                    }
+                }
+            });
+
+            // Step 3: Attach root nodes to the container and concatenate texts
+            combined.forEach(item => {
+                if (!item.parent) {
+                    container.appendChild(buildNestedStructure(Map[item.id]));
+                    gettext(item, Map, combined); // concatenate texts
+                }
+            });
+
+            // Update `text_ids` with the accumulated text content
+            combined.forEach(item => {
+                item.text_ids = item.text_ids.join(" ");
+                Map[item.id].element.textContent = item.text_ids;
+                
+
+            });
+        }
+
+        // Create a single tree node element
+        function createNode(item) {
+            const node = document.createElement('div');
+            node.className = 'tree-node';
+            node.textContent = item.text || `[${item.relname}]`;
+            return node;
+        }
+
+        // Recursively build nested structures
+        function buildNestedStructure(nodeObj) {
+            const wrapper = document.createElement('div');
+            wrapper.appendChild(nodeObj.element);
+            
+            if (nodeObj.children.length > 0) {
+                const childrenWrapper = document.createElement('div');
+                childrenWrapper.className = 'tree-children';
+                
+                nodeObj.children.forEach(childNodeObj => {
+                    childrenWrapper.appendChild(buildNestedStructure(childNodeObj));
+                });
+                
+                wrapper.appendChild(childrenWrapper);
+            }
+            return wrapper;
+        }
+
+        // Recursively concatenate text
+        function gettext(item, Map, combined) {
+            const currentItem = Map[item.id];
+            if (currentItem.children.length > 0) {
+                currentItem.children.forEach(child => {
+                    const childItem = combined.find(cItem => cItem.id === child.element.id);
+                    gettext(childItem, Map, combined);  // Recursive call
+                    item.text_ids.push(...childItem.text_ids);  // Accumulate text_ids
+                });
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            buildTree(rs3Data);
+        });
+    </script>
+</body>
+</html>

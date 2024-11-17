@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RST Tree Visualization</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <h1>RST Tree Structure</h1>
+    <div id="tree-container"></div>
+    
+    <script>
+        // Pass rs3 data from Flask to JavaScript
+        const rs3Data = {{ rs3_data | tojson }};
+        
+        function buildTree(data) {
+            const combined = data.segments.concat(data.groups);
+            const dic = {};
+            combined.foreach(item =>{
+                dic[item.id] = {'item' :item, 'children' : [], 'level': -1}
+
+            })
+            
+            combined.foreach(item =>{
+                if (item.parent) {
+                    dic[item.parent.id].children.push(item.id);
+                    dic[item.parent.id].children.sort((a,b) => parseInt(a) - parseInt(b));
+                }
+
+            })
+            const highest_level = 0;
+            function sex(item) {
+                if (dic[item.id].children.length > 0) {
+                    dic[item.id].children.foreach(id => {
+                        dic.id.level = dic[item.id].level + 1;
+                        if (dic.id.level > highest_level) {
+                            highest_level = dic.id.level;
+                        }
+                        sex(dic.id);
+                    })
+                    
+                }
+            }
+            
+            combined.foreach(item => {
+                if (!item.parent) {
+                    dic[item.id].level = 0
+                    sex(item);
+                }
+                
+            })
+            
+            for (let i = 0; i<=highest_level; i++) {
+
+            }
+        
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            buildTree(rs3Data);
+        });
+    </script>
+</body>
+</html>

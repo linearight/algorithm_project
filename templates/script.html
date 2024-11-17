@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RST Tree Visualization</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <h1>RST Tree Structure</h1>
+    <div id="tree-container"></div>
+    
+    <script>
+        // Pass rs3 data from Flask to JavaScript
+        const rs3Data = {{ rs3_data | tojson }};
+        
+        function buildTree(data) {
+            const container = document.getElementById('tree-container');
+
+            // Step 1: Create a map of segments by their ID
+            const Map = {};
+            const combined = data.segments.concat(data.groups)
+            combined.forEach(item => {
+                Map[item.id] = {
+                    element: createNode(item),
+                    children: []
+                };
+            });
+           
+
+
+            // Step 2: Build parent-child relationships
+            combined.forEach(segment => {
+                if (segment.parent) {
+                    Map[segment.parent].children.push(Map[segment.id]);
+                }
+            });
+            data.groups.forEach(group => {
+                if (group.parent) {
+                    Map[group.parent].children.push(Map[group.id]);
+                    data.groups.find(item => item.group_id === group.parent).forEach(parent => {
+                        parent.text.push([group.id,group.text]);
+                    });
+                }
+            });
+            // Step 3: Attach nodes to the container (root-level segments)
+            
+            data.groups.forEach(group => {
+                const text = '';
+                group.text.sort((a,b) => parseInt(a[0]) - parseInt(b[0])).forEach(child => {
+                    text += ' ' + child[1];
+                });
+                group.text = text
+                Map[group.id].element.textContent = text
+            });
+            
+            combined.forEach(item => {
+                if (!item.parent) {
+                    container.appendChild(buildNestedStructure(Map[item.id]));
+                }
+            });
+        }
+
+
+        function createNode(item) {
+            const node = document.createElement('div');
+            node.className = 'tree-node';
+            node.textContent = item.text || '';
+            return node;
+        }
+
+        // Recursively build nested structures
+        function buildNestedStructure(nodeObj) {
+            const wrapper = document.createElement('div');
+            wrapper.appendChild(nodeObj.element);
+            
+            if (nodeObj.children.length > 0) {
+                const childrenWrapper = document.createElement('div');
+                childrenWrapper.className = 'tree-children';
+                
+                nodeObj.children.forEach(childNodeObj => {
+                    childrenWrapper.appendChild(buildNestedStructure(childNodeObj));
+                });
+                
+                wrapper.appendChild(childrenWrapper);
+            }
+            return wrapper;
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            buildTree(rs3Data);
+        });
+    </script>
+</body>
+</html>
